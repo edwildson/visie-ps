@@ -1,11 +1,11 @@
 import pymysql
 
 conn = pymysql.connect(
-    host='jobs.visie.com.br',
-    database='edwildsonrodrigues',
+    host='',
+    database='',
     port=3306,
-    user='edwildsonrodrigues',
-    password='ZWR3aWxkc29u',
+    user='',
+    password='',
     charset='',
     cursorclass= pymysql.cursors.DictCursor
 )
