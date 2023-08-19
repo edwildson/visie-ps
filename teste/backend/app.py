@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 import json
 import pymysql
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)
 
 def db_connection():
     conn = None
@@ -33,12 +35,12 @@ def get_persons():
             persons = [
                 dict(
                     id=row['id_pessoa'],
-                    name=row['nome'],
+                    nome=row['nome'],
                     rg=row['rg'],
                     cpf=row['cpf'],
-                    birth_date=row['data_nascimento'],
-                    hire_date=row['data_admissao'],
-                    role=row['funcao']
+                    data_nascimento=row['data_nascimento'],
+                    data_admissao=row['data_admissao'],
+                    funcao=row['funcao']
                 ) for row in cursor.fetchall()
             ]
 
@@ -55,19 +57,19 @@ def create_person():
     try:
         data = request.get_json()
         
-        if all(key in data for key in ['name', 'rg', 'cpf', 'birth_date', 'hire_date', 'role']):
+        if all(key in data for key in ['nome', 'rg', 'cpf', 'data_nascimento', 'data_admissao', 'funcao']):
             conn = db_connection()
 
             with conn.cursor() as cursor:
                 sql = "INSERT INTO pessoas (nome, rg, cpf, data_nascimento, data_admissao, funcao) VALUES (%s, %s, %s, %s, %s, %s)"
                 
                 cursor.execute(sql, (
-                    data['name'], 
+                    data['nome'], 
                     data['rg'], 
                     data['cpf'], 
-                    data['birth_date'], 
-                    data['hire_date'], 
-                    data['role']
+                    data['data_nascimento'], 
+                    data['data_admissao'], 
+                    data['funcao']
                 ))
                 
                 conn.commit()
@@ -91,12 +93,12 @@ def get_person(id):
 
             person = dict(
                 id=data['id_pessoa'],
-                name=data['nome'],
+                nome=data['nome'],
                 rg=data['rg'],
                 cpf=data['cpf'],
-                birth_date=data['data_nascimento'],
-                hire_date=data['data_admissao'],
-                role=data['funcao']
+                data_nascimento=data['data_nascimento'],
+                data_admissao=data['data_admissao'],
+                funcao=data['funcao']
             ) 
 
         conn.close()
