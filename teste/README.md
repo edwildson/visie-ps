@@ -50,8 +50,8 @@ Acesse a aplicação em [http://localhost:5173](http://localhost:5173).
 ---
 
 #### Desktop (1080p)
-![Listagem]([img]https://i.imgur.com/GRRnRr8.png[/img])
-![Visualização]([img]https://i.imgur.com/poiuett.png[/img])
+![Listagem](https://i.imgur.com/GRRnRr8.png)
+![Visualização](https://i.imgur.com/poiuett.png)
 #### Mobile (iPhone 12 Pro)
-![Listagem]([img]https://i.imgur.com/oX5N8V4.png[/img])
-![Visualização]([img]https://i.imgur.com/v1EqKlv.png[/img])
+![Listagem](https://i.imgur.com/oX5N8V4.png)
+![Visualização](https://i.imgur.com/v1EqKlv.png)
