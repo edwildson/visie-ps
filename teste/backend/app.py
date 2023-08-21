@@ -1,21 +1,20 @@
 from flask import Flask, request, jsonify
-import json
 import pymysql
-from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from config.settings import app, db
+from flask_cors import cross_origin
 
-
-app = Flask(__name__)
-CORS(app)
+from models import Person as Pessoa  # Importe o modelo Person
 
 def db_connection():
     conn = None
     try:
         conn = pymysql.connect(
-            host='',
-            database='',
+            host='jobs.visie.com.br',
+            database='edwildsonrodrigues',
             port=3306,
-            user='',
-            password='',
+            user='edwildsonrodrigues',
+            password='ZWR3aWxkc29u',
             charset='',
             cursorclass= pymysql.cursors.DictCursor
         )
@@ -24,94 +23,65 @@ def db_connection():
 
     return conn
 
-@app.route("/persons", methods=["GET"])
+@app.route("/api/persons", methods=["GET"])
+@cross_origin()
 def get_persons():
     try:
-        conn = db_connection()
-        
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM pessoas")
+        persons = Pessoa.query.all()
 
-            persons = [
-                dict(
-                    id=row['id_pessoa'],
-                    nome=row['nome'],
-                    rg=row['rg'],
-                    cpf=row['cpf'],
-                    data_nascimento=row['data_nascimento'],
-                    data_admissao=row['data_admissao'],
-                    funcao=row['funcao']
-                ) for row in cursor.fetchall()
-            ]
+        persons_data = [
+            person.serialize()
+            for person in persons
+        ]
 
-            conn.close()
+        return jsonify(persons_data)
 
-            return jsonify(persons)
-            
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-            
 
-@app.route("/persons", methods=["POST"])
+@app.route("/api/persons", methods=["POST"])
+@cross_origin()
 def create_person():
     try:
         data = request.get_json()
         
         if all(key in data for key in ['nome', 'rg', 'cpf', 'data_nascimento', 'data_admissao', 'funcao']):
-            conn = db_connection()
-
-            with conn.cursor() as cursor:
-                sql = "INSERT INTO pessoas (nome, rg, cpf, data_nascimento, data_admissao, funcao) VALUES (%s, %s, %s, %s, %s, %s)"
-                
-                cursor.execute(sql, (
-                    data['nome'], 
-                    data['rg'], 
-                    data['cpf'], 
-                    data['data_nascimento'], 
-                    data['data_admissao'], 
-                    data['funcao']
-                ))
-                
-                conn.commit()
-            conn.close()
-            return jsonify({'message': 'Person added successfully'}), 201
-        else:
-            return jsonify({'error': 'All fields are required'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route("/persons/<int:id>", methods=["GET"])
-def get_person(id):
-    try:
-        conn = db_connection()
-
-        with conn.cursor() as cursor:
-            sql = "SELECT * FROM pessoas WHERE id_pessoa = %s"
-            cursor.execute(sql, (id,))
-            data = cursor.fetchone()
-
-            person = dict(
-                id=data['id_pessoa'],
+            person = Pessoa(
                 nome=data['nome'],
                 rg=data['rg'],
                 cpf=data['cpf'],
                 data_nascimento=data['data_nascimento'],
                 data_admissao=data['data_admissao'],
                 funcao=data['funcao']
-            ) 
+            )
+           
+            db.session.add(person)
+            db.session.commit()
+           
+            return jsonify({'data': person.serialize(), 'message': 'Person added successfully'}), 201
+        else:
+            return jsonify({'error': 'All fields are required'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        conn.close()
+@app.route("/api/persons/<int:id>", methods=["GET"])
+@cross_origin()
+def get_person(id):
+    try:
+        person = Pessoa.query.filter_by(id_pessoa=id).first()
+
+        print("opa")
 
         if person is not None:
-            return jsonify(person)
+            return jsonify(person.serialize())
     
         return jsonify({'error': 'Person not found'}), 404
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route("/persons/<int:id>", methods=["PATCH"])
+@app.route("/api/persons/<int:id>", methods=["PATCH"])
+@cross_origin(origins='http://localhost:5173')
 def update_person(id):
     try:
         data = request.get_json()
@@ -121,33 +91,33 @@ def update_person(id):
         valid_data = {key: value for key, value in data.items() if key in valid_fields}
 
         if valid_data:
-            conn = db_connection()
+            person = db.session.get(Pessoa, id)
 
-            with conn.cursor() as cursor:
-                update_values = ', '.join([f"{key} = %s" for key in valid_data.keys()])
-                sql = f"UPDATE pessoas SET {update_values} WHERE id_pessoa = %s"
-                cursor.execute(sql, (*valid_data.values(), id))
-                conn.commit()
+            if person is None:
+                return jsonify({'error': "Person not found"}), 404
 
-            conn.close()
+            for key, value in valid_data.items():
+                setattr(person, key, value)
 
-            return jsonify({'message': 'Person updated successfully'}), 200
+            db.session.commit()
+
+            return jsonify({'data': person.serialize(), 'message': 'Person updated successfully'}), 201
         else:
             return jsonify({'error': 'At least one field to update is required'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route("/persons/<int:id>", methods=["PATCH"])
+@app.route("/api/persons/<int:id>", methods=["DELETE"])
+@cross_origin()
 def delete_person(id):
     try:
-        conn = db_connection
+        person = Pessoa.query.get(id)
 
-        with conn.cursor() as cursor:
-            sql = "DELETE FROM pessoas WHERE id_pessoa = %s"
-            cursor.execute(sql, (id,))
-            conn.commit()
+        if person is None:
+            return jsonify({'error': "Person not found"}), 404
 
-        conn.close()
+        db.session.delete(person)
+        db.session.commit()
 
         return jsonify({'message': 'Person deleted successfully'}), 200
     except Exception as e:

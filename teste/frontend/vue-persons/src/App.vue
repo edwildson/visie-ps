@@ -1,15 +1,10 @@
 <template>
   <div>
-    <NavBar />
-    <PersonList />
+    <router-view />
   </div>
 </template>
 
 <script setup lang="ts">
-import NavBar from "./components/Navbar.vue";
-import PersonList from "./components/PersonList.Component.vue";
-
-
 </script>
 
 <style scoped>
